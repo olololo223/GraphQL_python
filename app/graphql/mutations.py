@@ -1,12 +1,15 @@
+
 import strawberry
-from typing import Optional
-from app.graphql.types import BookType, AuthorType, AuthPayload, BookInput, AuthorInput
-from app.graphql.queries import to_book, to_author
-from app.services.book_service import BookService
-from app.services.author_service import AuthorService
-from app.security import create_token, hash_password, verify_password
+
 from app.database import SessionLocal
+from app.exceptions import EmailAlreadyExistsError, InvalidCredentialsError
+from app.graphql.queries import to_author, to_book
+from app.graphql.types import AuthorInput, AuthorType, AuthPayload, BookInput, BookType
 from app.models import User
+from app.security import create_token, hash_password, verify_password
+from app.services.author_service import AuthorService
+from app.services.book_service import BookService
+
 
 @strawberry.type
 class Mutation:
@@ -15,7 +18,7 @@ class Mutation:
     def register(self, email: str, password: str) -> AuthPayload:
         with SessionLocal() as db:
             if db.query(User).filter_by(email=email).first():
-                raise Exception("Email already exists")
+                raise EmailAlreadyExistsError("Email already exists")
             user = User(email=email, hashed_password=hash_password(password), role="user")
             db.add(user)
             db.commit()
@@ -27,7 +30,7 @@ class Mutation:
         with SessionLocal() as db:
             user = db.query(User).filter_by(email=email).first()
             if not user or not verify_password(password, user.hashed_password):
-                raise Exception("Invalid credentials")
+                raise InvalidCredentialsError("Invalid credentials")
             return AuthPayload(token=create_token(user.id, user.role), role=user.role)
 
     # ---- Authors ----
@@ -45,7 +48,7 @@ class Mutation:
             return to_book(b)
 
     @strawberry.mutation
-    def update_price(self, id: int, new_price: float) -> Optional[BookType]:
+    def update_price(self, id: int, new_price: float) -> BookType | None:
         with SessionLocal() as db:
             b = BookService(db).update_price(id, new_price)
             return to_book(b) if b else None

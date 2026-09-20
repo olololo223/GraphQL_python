@@ -1,12 +1,13 @@
+
 import strawberry
-from typing import List
+
 
 @strawberry.type
 class AuthorType:
     id: int
     name: str
     country: str
-    books: List["BookType"]
+    books: list["BookType"]
 
 @strawberry.type
 class BookType:
