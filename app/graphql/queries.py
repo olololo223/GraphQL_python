@@ -1,4 +1,3 @@
-
 import strawberry
 
 from app.database import SessionLocal
@@ -42,8 +41,12 @@ class Query:
         offset: int = 0,
     ) -> BookListResult:
         filters = {
-            year_from:year_from, year_to:year_to, search:search,
-            author_id:author_id, min_price:min_price, max_price:max_price,
+            "year_from": year_from,
+            "year_to": year_to,
+            "search": search,
+            "author_id": author_id,
+            "min_price": min_price,
+            "max_price": max_price,
         }
         with SessionLocal() as db:
             svc = BookService(db)

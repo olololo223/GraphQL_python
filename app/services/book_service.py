@@ -43,9 +43,29 @@ class BookService:
 
         return q.offset(offset).limit(limit).all()
 
-    def count(self, **filters) -> int:
-        # упрощённо — тот же запрос без offset/limit
-        return len(self.list(**{**filters, "limit": 100000, "offset": 0}))
+    def count(
+        self,
+        year_from: int | None = None,
+        year_to: int | None = None,
+        search: str | None = None,
+        author_id: int | None = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
+    ) -> int:
+        q = self.db.query(Book)
+        if year_from:
+            q = q.filter(Book.year >= year_from)
+        if year_to:
+            q = q.filter(Book.year <= year_to)
+        if search:
+            q = q.filter(Book.title.ilike(f"%{search}%"))
+        if author_id:
+            q = q.filter(Book.author_id == author_id)
+        if min_price is not None:
+            q = q.filter(Book.price >= min_price)
+        if max_price is not None:
+            q = q.filter(Book.price <= max_price)
+        return q.count()
 
     def get(self, book_id: int) -> Book | None:
         return self.db.get(Book, book_id)

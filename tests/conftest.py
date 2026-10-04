@@ -11,7 +11,6 @@ from app.main import app
 
 @pytest.fixture(scope="function")
 def client(monkeypatch):
-    """Изолированная SQLite in-memory на каждый тест."""
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -20,7 +19,6 @@ def client(monkeypatch):
     TestingSession = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     Base.metadata.create_all(engine)
 
-    # подменяем SessionLocal во всех модулях, где он используется
     monkeypatch.setattr(db_module, "SessionLocal", TestingSession)
     import app.graphql.mutations as m
     import app.graphql.queries as q
@@ -33,11 +31,27 @@ def client(monkeypatch):
     Base.metadata.drop_all(engine)
     engine.dispose()
 
+
 @pytest.fixture
 def admin_client(client):
-    """Зарегистрированный admin-клиент с токеном."""
+    """Клиент с admin-токеном в заголовке Authorization."""
     res = client.post("/graphql", json={
         "query": 'mutation { register(email:"admin@t.c", password:"12345"){ token role } }'
+    }).json()
+    token = res["data"]["register"]["token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+    return client
+
+
+@pytest.fixture
+def user_client(client):
+    """Клиент с обычным user-токеном (не админ)."""
+    # первый — admin, второй — user
+    client.post("/graphql", json={
+        "query": 'mutation { register(email:"admin@t.c", password:"12345"){ token } }'
+    })
+    res = client.post("/graphql", json={
+        "query": 'mutation { register(email:"user@t.c", password:"12345"){ token role } }'
     }).json()
     token = res["data"]["register"]["token"]
     client.headers["Authorization"] = f"Bearer {token}"
