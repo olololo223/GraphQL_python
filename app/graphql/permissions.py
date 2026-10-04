@@ -1,6 +1,7 @@
 from functools import wraps
-from strawberry.types import Info
+
 from graphql import GraphQLError
+from strawberry.types import Info
 
 
 def login_required(func):

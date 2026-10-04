@@ -1,15 +1,16 @@
+
 import strawberry
-from typing import Optional
 from strawberry.types import Info
-from app.graphql.types import BookType, AuthorType, AuthPayload, BookInput, AuthorInput
-from app.graphql.queries import to_book, to_author
-from app.graphql.permissions import login_required, admin_required
-from app.services.book_service import BookService
-from app.services.author_service import AuthorService
-from app.security import create_token, hash_password, verify_password
+
 from app.database import SessionLocal
-from app.models import User
 from app.exceptions import EmailAlreadyExistsError, InvalidCredentialsError
+from app.graphql.permissions import admin_required
+from app.graphql.queries import to_author, to_book
+from app.graphql.types import AuthorInput, AuthorType, AuthPayload, BookInput, BookType
+from app.models import User
+from app.security import create_token, hash_password, verify_password
+from app.services.author_service import AuthorService
+from app.services.book_service import BookService
 
 
 @strawberry.type
@@ -51,7 +52,7 @@ class Mutation:
 
     @strawberry.mutation
     @admin_required
-    def update_author(self, info: Info, id: int, data: AuthorInput) -> Optional[AuthorType]:
+    def update_author(self, info: Info, id: int, data: AuthorInput) -> AuthorType | None:
         with SessionLocal() as db:
             a = AuthorService(db).update(id, data.name, data.country)
             return to_author(a) if a else None
@@ -72,14 +73,14 @@ class Mutation:
 
     @strawberry.mutation
     @admin_required
-    def update_book(self, info: Info, id: int, data: BookInput) -> Optional[BookType]:
+    def update_book(self, info: Info, id: int, data: BookInput) -> BookType | None:
         with SessionLocal() as db:
             b = BookService(db).update(id, data.title, data.year, data.price, data.author_id)
             return to_book(b) if b else None
 
     @strawberry.mutation
     @admin_required
-    def update_price(self, info: Info, id: int, new_price: float) -> Optional[BookType]:
+    def update_price(self, info: Info, id: int, new_price: float) -> BookType | None:
         with SessionLocal() as db:
             b = BookService(db).update_price(id, new_price)
             return to_book(b) if b else None

@@ -1,16 +1,17 @@
 from dataclasses import dataclass
-from typing import Optional
+
 from fastapi import Request
-from app.security import decode_token
+from strawberry.fastapi import BaseContext
+
 from app.database import SessionLocal
 from app.models import User
-from strawberry.fastapi import BaseContext
+from app.security import decode_token
 
 
 @dataclass
 class GraphQLContext(BaseContext):
     request: Request
-    user: Optional[User] = None
+    user: User | None = None
     db_session_factory = SessionLocal
 
     @property
