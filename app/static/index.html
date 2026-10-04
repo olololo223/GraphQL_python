@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>BookStore Admin</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>📚 BookStore Admin</h1>
+        <div id="auth-panel">
+            <input id="email" placeholder="email" value="admin@test.com">
+            <input id="password" type="password" placeholder="password" value="admin123">
+            <button onclick="login()">Войти</button>
+            <button onclick="register()">Регистрация</button>
+        </div>
+        <div id="user-info" style="display:none">
+            <span id="who"></span>
+            <button onclick="logout()">Выйти</button>
+        </div>
+    </header>
+
+    <main id="app" style="display:none">
+        <section class="filters">
+            <h2>Фильтры</h2>
+            <input id="search" placeholder="Поиск по названию" oninput="debouncedLoadBooks()">
+            <input id="year-from" type="number" placeholder="Год от" oninput="debouncedLoadBooks()">
+            <input id="year-to" type="number" placeholder="Год до" oninput="debouncedLoadBooks()">
+            <input id="min-price" type="number" placeholder="Цена от" oninput="debouncedLoadBooks()">
+            <input id="max-price" type="number" placeholder="Цена до" oninput="debouncedLoadBooks()">
+            <select id="sort-by" onchange="loadBooks()">
+                <option value="id">По ID</option>
+                <option value="title">По названию</option>
+                <option value="year">По году</option>
+                <option value="price">По цене</option>
+            </select>
+            <button onclick="loadBooks()">Применить</button>
+        </section>
+
+        <section>
+            <h2>Книги <span id="books-total"></span></h2>
+            <button onclick="openBookModal()" class="admin-only">+ Добавить книгу</button>
+            <table id="books-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Название</th><th>Год</th>
+                        <th>Цена</th><th>Автор</th><th class="admin-only">Действия</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="pagination">
+                <button onclick="prevPage()">← Назад</button>
+                <span id="page-info"></span>
+                <button onclick="nextPage()">Вперёд →</button>
+            </div>
+        </section>
+
+        <section>
+            <h2>Авторы <span id="authors-total"></span></h2>
+            <button onclick="openAuthorModal()" class="admin-only">+ Добавить автора</button>
+            <table id="authors-table">
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Имя</th><th>Страна</th><th class="admin-only">Действия</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+
+    <!-- Модалка для книги -->
+    <div id="book-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="book-modal-title">Новая книга</h3>
+            <input type="hidden" id="book-id">
+            <label>Название <input id="book-title"></label>
+            <label>Год <input id="book-year" type="number"></label>
+            <label>Цена <input id="book-price" type="number" step="0.01"></label>
+            <label>Автор
+                <select id="book-author"></select>
+            </label>
+            <div class="modal-actions">
+                <button onclick="saveBook()">Сохранить</button>
+                <button onclick="closeModal('book-modal')">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка для автора -->
+    <div id="author-modal" class="modal">
+        <div class="modal-content">
+            <h3 id="author-modal-title">Новый автор</h3>
+            <input type="hidden" id="author-id">
+            <label>Имя <input id="author-name"></label>
+            <label>Страна <input id="author-country"></label>
+            <div class="modal-actions">
+                <button onclick="saveAuthor()">Сохранить</button>
+                <button onclick="closeModal('author-modal')">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

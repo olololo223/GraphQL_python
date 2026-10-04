@@ -21,3 +21,13 @@ def test_delete_book(client):
     gql(client, 'mutation { addBook(data:{title:"B",year:2020,price:100,authorId:1}){id} }')
     res = gql(client, 'mutation { deleteBook(id:1) }')
     assert res["data"]["deleteBook"] is True
+
+def test_add_book(admin_client):
+    admin_client.post("/graphql", json={
+        "query": 'mutation { addAuthor(data:{name:"A", country:"X"}){id} }'
+    })
+    res = admin_client.post("/graphql", json={
+        "query": 'mutation { addBook(data:{title:"B", year:2020, price:100, authorId:1}){id} }'
+    }).json()
+    assert res["data"]["addBook"]["id"] == 1
+     

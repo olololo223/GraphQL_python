@@ -1,25 +1,33 @@
-
 import strawberry
-
-from app.database import SessionLocal
-from app.exceptions import EmailAlreadyExistsError, InvalidCredentialsError
-from app.graphql.queries import to_author, to_book
-from app.graphql.types import AuthorInput, AuthorType, AuthPayload, BookInput, BookType
-from app.models import User
-from app.security import create_token, hash_password, verify_password
-from app.services.author_service import AuthorService
+from typing import Optional
+from strawberry.types import Info
+from app.graphql.types import BookType, AuthorType, AuthPayload, BookInput, AuthorInput
+from app.graphql.queries import to_book, to_author
+from app.graphql.permissions import login_required, admin_required
 from app.services.book_service import BookService
+from app.services.author_service import AuthorService
+from app.security import create_token, hash_password, verify_password
+from app.database import SessionLocal
+from app.models import User
+from app.exceptions import EmailAlreadyExistsError, InvalidCredentialsError
 
 
 @strawberry.type
 class Mutation:
-    # ---- Auth ----
+    # ============ AUTH (публичные) ============
     @strawberry.mutation
     def register(self, email: str, password: str) -> AuthPayload:
         with SessionLocal() as db:
             if db.query(User).filter_by(email=email).first():
                 raise EmailAlreadyExistsError("Email already exists")
-            user = User(email=email, hashed_password=hash_password(password), role="user")
+            # Первый пользователь — админ (удобно для демо)
+            is_first = db.query(User).count() == 0
+            role = "admin" if is_first else "user"
+            user = User(
+                email=email,
+                hashed_password=hash_password(password),
+                role=role,
+            )
             db.add(user)
             db.commit()
             db.refresh(user)
@@ -33,27 +41,51 @@ class Mutation:
                 raise InvalidCredentialsError("Invalid credentials")
             return AuthPayload(token=create_token(user.id, user.role), role=user.role)
 
-    # ---- Authors ----
+    # ============ AUTHORS (только admin) ============
     @strawberry.mutation
-    def add_author(self, data: AuthorInput) -> AuthorType:
+    @admin_required
+    def add_author(self, info: Info, data: AuthorInput) -> AuthorType:
         with SessionLocal() as db:
             a = AuthorService(db).create(data.name, data.country)
             return to_author(a)
 
-    # ---- Books ----
     @strawberry.mutation
-    def add_book(self, data: BookInput) -> BookType:
+    @admin_required
+    def update_author(self, info: Info, id: int, data: AuthorInput) -> Optional[AuthorType]:
+        with SessionLocal() as db:
+            a = AuthorService(db).update(id, data.name, data.country)
+            return to_author(a) if a else None
+
+    @strawberry.mutation
+    @admin_required
+    def delete_author(self, info: Info, id: int) -> bool:
+        with SessionLocal() as db:
+            return AuthorService(db).delete(id)
+
+    # ============ BOOKS (только admin) ============
+    @strawberry.mutation
+    @admin_required
+    def add_book(self, info: Info, data: BookInput) -> BookType:
         with SessionLocal() as db:
             b = BookService(db).create(data.title, data.year, data.price, data.author_id)
             return to_book(b)
 
     @strawberry.mutation
-    def update_price(self, id: int, new_price: float) -> BookType | None:
+    @admin_required
+    def update_book(self, info: Info, id: int, data: BookInput) -> Optional[BookType]:
+        with SessionLocal() as db:
+            b = BookService(db).update(id, data.title, data.year, data.price, data.author_id)
+            return to_book(b) if b else None
+
+    @strawberry.mutation
+    @admin_required
+    def update_price(self, info: Info, id: int, new_price: float) -> Optional[BookType]:
         with SessionLocal() as db:
             b = BookService(db).update_price(id, new_price)
             return to_book(b) if b else None
 
     @strawberry.mutation
-    def delete_book(self, id: int) -> bool:
+    @admin_required
+    def delete_book(self, info: Info, id: int) -> bool:
         with SessionLocal() as db:
             return BookService(db).delete(id)

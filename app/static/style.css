@@ -1,0 +1,26 @@
+* { box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; margin: 0; background: #f5f5f7; color: #222; }
+header { background: #2c3e50; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+header h1 { margin: 0; font-size: 20px; }
+header input { padding: 6px; border-radius: 4px; border: none; }
+header button { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; background: #3498db; color: white; }
+header button:hover { background: #2980b9; }
+main { padding: 24px; max-width: 1200px; margin: auto; }
+section { background: white; padding: 16px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filters input, .filters select { padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
+th { background: #f9f9f9; font-weight: 600; }
+button { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; background: #3498db; color: white; margin-right: 4px; }
+button:hover { opacity: 0.9; }
+button.danger { background: #e74c3c; }
+.pagination { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+.modal-content { background: white; padding: 24px; border-radius: 8px; min-width: 400px; display: flex; flex-direction: column; gap: 12px; }
+.modal-content label { display: flex; flex-direction: column; gap: 4px; }
+.modal-content input, .modal-content select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+#toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; background: #27ae60; color: white; border-radius: 6px; opacity: 0; transition: opacity 0.3s; z-index: 200; }
+#toast.error { background: #e74c3c; }
+.admin-only { display: none; }

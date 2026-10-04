@@ -32,3 +32,13 @@ def client(monkeypatch):
 
     Base.metadata.drop_all(engine)
     engine.dispose()
+
+@pytest.fixture
+def admin_client(client):
+    """Зарегистрированный admin-клиент с токеном."""
+    res = client.post("/graphql", json={
+        "query": 'mutation { register(email:"admin@t.c", password:"12345"){ token role } }'
+    }).json()
+    token = res["data"]["register"]["token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+    return client

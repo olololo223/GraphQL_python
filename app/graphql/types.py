@@ -33,3 +33,17 @@ class BookInput:
 class AuthorInput:
     name: str
     country: str
+
+@strawberry.type
+class BookListResult:
+    items: list[BookType]
+    total: int
+    limit: int
+    offset: int
+
+@strawberry.type
+class AuthorListResult:
+    items: list[AuthorType]
+    total: int
+    limit: int
+    offset: int
