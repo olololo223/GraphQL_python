@@ -4,10 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import app.database as db_module
 from app.database import Base
 from app.main import app
 from app.models import User
-import app.database as db_module
 
 
 @pytest.fixture(scope="function")
@@ -21,8 +21,8 @@ def client(monkeypatch):
     Base.metadata.create_all(engine)
 
     monkeypatch.setattr(db_module, "SessionLocal", TestingSession)
-    import app.graphql.queries as q
     import app.graphql.mutations as m
+    import app.graphql.queries as q
     monkeypatch.setattr(q, "SessionLocal", TestingSession)
     monkeypatch.setattr(m, "SessionLocal", TestingSession)
 
