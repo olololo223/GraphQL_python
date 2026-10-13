@@ -1,16 +1,17 @@
 from dataclasses import dataclass
-from typing import Optional
+
 from fastapi import Request
 from strawberry.fastapi import BaseContext
-from app.security import decode_token
+
 import app.database
 from app.models import User
+from app.security import decode_token
 
 
 @dataclass
 class GraphQLContext(BaseContext):
     request: Request
-    user: Optional[User] = None
+    user: User | None = None
 
     @property
     def is_authenticated(self) -> bool:
