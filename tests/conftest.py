@@ -4,9 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-import app.database as db_module
 from app.database import Base
 from app.main import app
+from app.models import User
+import app.database as db_module
 
 
 @pytest.fixture(scope="function")
@@ -20,8 +21,8 @@ def client(monkeypatch):
     Base.metadata.create_all(engine)
 
     monkeypatch.setattr(db_module, "SessionLocal", TestingSession)
-    import app.graphql.mutations as m
     import app.graphql.queries as q
+    import app.graphql.mutations as m
     monkeypatch.setattr(q, "SessionLocal", TestingSession)
     monkeypatch.setattr(m, "SessionLocal", TestingSession)
 
@@ -33,23 +34,33 @@ def client(monkeypatch):
 
 
 @pytest.fixture
-def admin_client(client):
-    """Клиент с admin-токеном в заголовке Authorization."""
+def admin_client(client, monkeypatch):
+    """Регистрируем юзера и принудительно делаем его админом."""
+    # Регистрация
     res = client.post("/graphql", json={
         "query": 'mutation { register(email:"admin@t.c", password:"12345"){ token role } }'
     }).json()
     token = res["data"]["register"]["token"]
+
+    # Принудительно повышаем до админа через БД
+    from app.database import SessionLocal as _SL
+    with _SL() as db:
+        user = db.query(User).filter_by(email="admin@t.c").first()
+        user.role = "admin"
+        db.commit()
+
     client.headers["Authorization"] = f"Bearer {token}"
     return client
 
 
 @pytest.fixture
 def user_client(client):
-    """Клиент с обычным user-токеном (не админ)."""
-    # первый — admin, второй — user
+    """Обычный user (не админ)."""
+    # Первый — admin
     client.post("/graphql", json={
         "query": 'mutation { register(email:"admin@t.c", password:"12345"){ token } }'
     })
+    # Второй — user
     res = client.post("/graphql", json={
         "query": 'mutation { register(email:"user@t.c", password:"12345"){ token role } }'
     }).json()
