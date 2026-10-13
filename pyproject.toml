@@ -46,3 +46,5 @@ filterwarnings = [
     "ignore::ResourceWarning",
     "ignore::DeprecationWarning",
 ]
+[tool.poetry]
+package-mode = false
