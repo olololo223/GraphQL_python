@@ -4,9 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-import app.database as db_module
 from app.database import Base
 from app.main import app
+import app.database as db_module
 from app.models import User
 
 
@@ -20,11 +20,8 @@ def client(monkeypatch):
     TestingSession = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     Base.metadata.create_all(engine)
 
+    # Только эта подмена нужна — всё остальное берёт SessionLocal из app.database
     monkeypatch.setattr(db_module, "SessionLocal", TestingSession)
-    import app.graphql.mutations as m
-    import app.graphql.queries as q
-    monkeypatch.setattr(q, "SessionLocal", TestingSession)
-    monkeypatch.setattr(m, "SessionLocal", TestingSession)
 
     with TestClient(app) as c:
         yield c
@@ -34,17 +31,15 @@ def client(monkeypatch):
 
 
 @pytest.fixture
-def admin_client(client, monkeypatch):
+def admin_client(client):
     """Регистрируем юзера и принудительно делаем его админом."""
-    # Регистрация
     res = client.post("/graphql", json={
         "query": 'mutation { register(email:"admin@t.c", password:"12345"){ token role } }'
     }).json()
     token = res["data"]["register"]["token"]
 
-    # Принудительно повышаем до админа через БД
-    from app.database import SessionLocal as _SL
-    with _SL() as db:
+    # Явно повышаем роль в БД
+    with db_module.SessionLocal() as db:
         user = db.query(User).filter_by(email="admin@t.c").first()
         user.role = "admin"
         db.commit()
@@ -56,7 +51,7 @@ def admin_client(client, monkeypatch):
 @pytest.fixture
 def user_client(client):
     """Обычный user (не админ)."""
-    # Первый — admin
+    # Первый — admin (регистрируем, но не используем)
     client.post("/graphql", json={
         "query": 'mutation { register(email:"admin@t.c", password:"12345"){ token } }'
     })
@@ -65,5 +60,12 @@ def user_client(client):
         "query": 'mutation { register(email:"user@t.c", password:"12345"){ token role } }'
     }).json()
     token = res["data"]["register"]["token"]
+
+    # Явно фиксируем роль user
+    with db_module.SessionLocal() as db:
+        u = db.query(User).filter_by(email="user@t.c").first()
+        u.role = "user"
+        db.commit()
+
     client.headers["Authorization"] = f"Bearer {token}"
     return client

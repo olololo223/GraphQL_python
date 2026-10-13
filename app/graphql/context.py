@@ -1,18 +1,16 @@
 from dataclasses import dataclass
-
+from typing import Optional
 from fastapi import Request
 from strawberry.fastapi import BaseContext
-
-from app.database import SessionLocal
-from app.models import User
 from app.security import decode_token
+import app.database
+from app.models import User
 
 
 @dataclass
 class GraphQLContext(BaseContext):
     request: Request
-    user: User | None = None
-    db_session_factory = SessionLocal
+    user: Optional[User] = None
 
     @property
     def is_authenticated(self) -> bool:
@@ -33,13 +31,12 @@ async def get_context(request: Request) -> GraphQLContext:
         try:
             payload = decode_token(token)
             user_id = int(payload["sub"])
-            with SessionLocal() as db:
+            with app.database.SessionLocal() as db:
                 user = db.get(User, user_id)
                 if user:
-                    # Отсоединяем от сессии, чтобы использовать в resolver'ах
                     db.expunge(user)
                     ctx.user = user
         except (ValueError, KeyError):
-            pass  # невалидный токен — просто аноним
+            pass
 
     return ctx

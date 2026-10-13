@@ -1,6 +1,6 @@
 import strawberry
 
-from app.database import SessionLocal
+import app.database
 from app.graphql.types import AuthorListResult, AuthorType, BookListResult, BookType
 from app.services.author_service import AuthorService
 from app.services.book_service import BookService
@@ -48,7 +48,7 @@ class Query:
             "min_price": min_price,
             "max_price": max_price,
         }
-        with SessionLocal() as db:
+        with app.database.SessionLocal() as db:
             svc = BookService(db)
             items = svc.list(**filters, sort_by=sort_by, limit=limit, offset=offset)
             total = svc.count(**filters)
@@ -61,7 +61,7 @@ class Query:
 
     @strawberry.field
     def book(self, id: int) -> BookType | None:
-        with SessionLocal() as db:
+        with app.database.SessionLocal() as db:
             b = BookService(db).get(id)
             return to_book(b) if b else None
 
@@ -72,7 +72,7 @@ class Query:
         limit: int = 50,
         offset: int = 0,
     ) -> AuthorListResult:
-        with SessionLocal() as db:
+        with app.database.SessionLocal() as db:
             svc = AuthorService(db)
             items = svc.list(search=search, limit=limit, offset=offset)
             total = svc.count(search=search)
@@ -85,6 +85,6 @@ class Query:
 
     @strawberry.field
     def author(self, id: int) -> AuthorType | None:
-        with SessionLocal() as db:
+        with app.database.SessionLocal() as db:
             a = AuthorService(db).get(id)
             return to_author(a) if a else None
